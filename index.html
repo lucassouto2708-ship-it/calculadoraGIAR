@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apuração da GIAR</title>
+<style>
+  /* =========================================================
+     Identidade: papel de repartição — tinta escura sobre papel
+     quente, régua contábil, carimbo. Sem gradiente, sem neon.
+     ========================================================= */
+  :root{
+    --paper:#eeeae2;      /* fundo, papel envelhecido       */
+    --sheet:#fbf9f5;      /* folha                          */
+    --ink:#20242a;        /* tinta principal                */
+    --ink-2:#6b7078;      /* tinta secundária               */
+    --ink-3:#9a9ea6;      /* tinta terciária                */
+    --rule:#d8d2c6;       /* pauta forte                    */
+    --rule-2:#e8e3d8;     /* pauta fraca                    */
+    --seal:#0d4b3a;       /* verde tesouraria               */
+    --seal-w:#eaf1ed;     /* verde lavado                   */
+    --red:#8d2c24;        /* oxblood — carimbo de restrição */
+    --red-w:#f7ebe9;
+    --amber:#7a5512;
+    --amber-w:#f8f0dd;
+    --menu:#ffffff;       /* fundo dos menus nativos        */
+    --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    --serif:"Cambria","Constantia","Georgia","Times New Roman",serif;
+    --mono:"Cascadia Mono","Consolas","SFMono-Regular","Menlo",monospace;
+    color-scheme:light;   /* faz o navegador desenhar menu, scrollbar e spinner em claro */
+  }
+  /* tinta noturna — vale quando o sistema pede escuro e o usuário não escolheu,
+     ou quando o usuário escolhe escuro explicitamente */
+  @media (prefers-color-scheme:dark){
+    :root:not([data-tema="claro"]){
+      --paper:#15171b; --sheet:#1b1e23; --ink:#e8e4dc; --ink-2:#9ba1a9; --ink-3:#6d737b;
+      --rule:#333941; --rule-2:#272c33; --seal:#5fc9a3; --seal-w:#16302a;
+      --red:#e5867b; --red-w:#33201e; --amber:#e0b365; --amber-w:#332a17;
+      --menu:#222831;
+      color-scheme:dark;
+    }
+  }
+  :root[data-tema="escuro"]{
+    --paper:#15171b; --sheet:#1b1e23; --ink:#e8e4dc; --ink-2:#9ba1a9; --ink-3:#6d737b;
+    --rule:#333941; --rule-2:#272c33; --seal:#5fc9a3; --seal-w:#16302a;
+    --red:#e5867b; --red-w:#33201e; --amber:#e0b365; --amber-w:#332a17;
+    --menu:#222831;
+    color-scheme:dark;
+  }
+  :root[data-tema="claro"]{color-scheme:light}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .folha{max-width:660px;margin:0 auto;padding:0 20px 80px}
+
+  /* ---------- cabeçalho: documento, não landing page ---------- */
+  .topo{padding:46px 0 0;position:relative}
+
+  /* chave de tinta — claro/escuro */
+  #tema{position:absolute;top:42px;right:0;width:38px;height:38px;padding:0;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;color:var(--ink-2);border:1px solid var(--rule);border-radius:50%;
+    transition:color .18s,border-color .18s,background .18s,transform .12s}
+  #tema:hover{color:var(--seal);border-color:var(--seal);background:var(--seal-w)}
+  #tema:active{transform:scale(.93)}
+  #tema svg{width:17px;height:17px;display:block}
+  #tema .sol{display:none}
+  :root[data-tema="escuro"] #tema .sol{display:block}
+  :root[data-tema="escuro"] #tema .lua{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-tema="claro"]) #tema .sol{display:block}
+    :root:not([data-tema="claro"]) #tema .lua{display:none}
+  }
+  .orgao{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:600;margin:0 0 12px;padding-right:52px}
+  .topo h1{font-family:var(--serif);font-size:31px;font-weight:600;letter-spacing:-.015em;
+    margin:0 0 8px;line-height:1.15}
+  .topo h1 .art{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.08em;
+    color:var(--seal);vertical-align:6px;margin-left:9px;text-transform:uppercase}
+  .lede{font-size:14px;color:var(--ink-2);margin:0;max-width:52ch}
+  .filete{margin:22px 0 30px;border-top:1.5px solid var(--ink);border-bottom:.5px solid var(--rule);
+    height:3px}
+
+  /* ---------- blocos do formulário ---------- */
+  .bloco{margin-bottom:34px}
+  .rot{display:flex;align-items:center;gap:12px;margin:0 0 4px}
+  .rot span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);
+    font-weight:650;white-space:nowrap}
+  .rot::after{content:"";flex:1;border-top:1px solid var(--rule-2)}
+  .rot-nota{font-size:12.5px;color:var(--ink-3);margin:0 0 14px}
+
+  /* campos em pauta contábil — sem caixinha genérica */
+  .linha{display:flex;align-items:baseline;gap:14px;padding:11px 0 9px;border-bottom:1px solid var(--rule-2);
+    transition:border-color .18s}
+  .linha:first-of-type{border-top:1px solid var(--rule-2)}
+  .linha:focus-within{border-bottom-color:var(--seal)}
+  .linha .cap{flex:1 1 auto;min-width:0}
+  .linha .cap b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.005em}
+  .linha .cap i{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .linha .campo{flex:0 0 auto;display:flex;align-items:baseline;gap:5px}
+  .linha .pre{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  input[type=text],input[type=number],select{
+    font:inherit;color:var(--ink);background:transparent;border:none;padding:3px 2px;
+    text-align:right;font-variant-numeric:tabular-nums;
+  }
+  input:focus,select:focus{outline:none}
+  /* a largura acompanha o número digitado — cifras grandes não são cortadas */
+  .linha input.val{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:-.02em;
+    width:11.5ch;min-width:6ch;max-width:min(20ch,54vw);
+    border-bottom:1px solid transparent;transition:border-color .18s,background .18s}
+  .linha input.val:hover{border-bottom-color:var(--rule)}
+  .linha:focus-within input.val{border-bottom-color:var(--seal)}
+  .linha input.txt{text-align:right;width:min(30ch,52vw);font-size:14.5px}
+  .linha select{text-align:right;cursor:pointer;font-size:14.5px;appearance:none;padding:3px 15px 3px 6px;
+    border-bottom:1px solid transparent;border-radius:2px;
+    transition:border-color .18s,background-color .18s;
+    background-color:transparent;
+    background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),
+                     linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+    background-position:right 5px center,right 1px center;background-size:5px 5px;background-repeat:no-repeat}
+  .linha select:hover{background-color:var(--rule-2);border-bottom-color:var(--rule)}
+  .linha:focus-within select{border-bottom-color:var(--seal)}
+  /* o menu suspenso é desenhado pelo sistema: cor explícita para não sumir no escuro */
+  .linha select option{background-color:var(--menu);color:var(--ink);font-size:14px}
+  .linha select optgroup{background-color:var(--menu)}
+  .linha input::placeholder{color:var(--ink-3);font-style:italic;font-weight:400}
+  .aviso{font-size:12px;color:var(--amber);background:var(--amber-w);border-left:2px solid var(--amber);
+    padding:8px 11px;margin-top:10px;border-radius:0 3px 3px 0}
+
+  /* atalho para a Calculadora do Cidadão — botão secundário, contornado */
+  .ajuda{margin:14px 0 0}
+  #linkBc{display:inline-flex;align-items:center;gap:10px;text-decoration:none;
+    padding:9px 15px 9px 13px;border:1px solid var(--seal);border-radius:2px;
+    background:var(--seal-w);color:var(--seal);font-size:12.5px;font-weight:600;letter-spacing:.01em;
+    transition:background .18s,color .18s,box-shadow .18s,transform .1s}
+  #linkBc .calc{width:15px;height:15px;flex:0 0 auto;opacity:.9}
+  #linkBc .seta{width:11px;height:11px;flex:0 0 auto;opacity:.6;transition:transform .18s,opacity .18s}
+  #linkBc:hover{background:var(--seal);color:var(--sheet);box-shadow:0 2px 10px -4px var(--seal)}
+  #linkBc:hover .seta{transform:translate(2px,-2px);opacity:1}
+  #linkBc:active{transform:translateY(1px)}
+  :root[data-tema="escuro"] #linkBc:hover{color:#12181d}
+  @media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) #linkBc:hover{color:#12181d}}
+  #ajudaTxt{display:block;font-size:11.5px;color:var(--ink-3);margin-top:8px;max-width:56ch}
+
+  /* ---------- veredito ---------- */
+  .veredito{position:relative;background:var(--sheet);border:1px solid var(--rule);
+    border-top:2.5px solid var(--seal);padding:26px 26px 24px;margin-bottom:34px;
+    display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+  .veredito.vazio{border-top-color:var(--rule);background:transparent;border-style:dashed}
+  .veredito.nao{border-top-color:var(--red)}
+  .v-esq{flex:1 1 210px;min-width:200px}
+  .v-rot{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2);
+    font-weight:650;margin:0 0 6px}
+  .v-num{font-family:var(--serif);font-size:50px;line-height:1;font-weight:600;letter-spacing:-.035em;
+    margin:0;color:var(--seal);font-variant-numeric:tabular-nums}
+  .veredito.vazio .v-num,.veredito.nao .v-num{color:var(--ink-3)}
+  .veredito.nao .v-num{color:var(--red)}
+  .v-diz{font-size:13px;color:var(--ink-2);margin:11px 0 0;max-width:34ch}
+  .v-diz b{color:var(--ink);font-weight:600}
+  @keyframes marca{from{opacity:.25;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  .v-num.pisca{animation:marca .25s ease-out}
+
+  .v-dir{flex:1 1 230px;min-width:215px}
+  .veredito.restrito .v-dir{padding-top:44px}   /* abre espaço sob o carimbo */
+  .verba{display:flex;align-items:baseline;gap:7px;padding:7px 0}
+  .verba+.verba{border-top:1px dotted var(--rule)}
+  .verba dt{font-size:12px;color:var(--ink-2);white-space:nowrap}
+  .verba .fio{flex:1;border-bottom:1px dotted var(--rule-2);transform:translateY(-3px)}
+  .verba dd{margin:0;font-family:var(--mono);font-size:13.5px;font-weight:650;white-space:nowrap;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .verba.forte dd{font-size:15px}
+
+  /* carimbo de restrição */
+  .carimbo{position:absolute;top:16px;right:20px;transform:rotate(-3.5deg);
+    border:2px solid var(--red);border-radius:3px;padding:4px 10px 3px;color:var(--red);
+    font-size:12px;font-weight:750;letter-spacing:.13em;text-transform:uppercase;
+    box-shadow:inset 0 0 0 1px var(--red);opacity:.9}
+  .carimbo small{display:block;font-size:8.5px;letter-spacing:.09em;font-weight:600;opacity:.85;
+    text-align:center;margin-top:1px}
+
+  .motivo{flex:1 1 100%;border-top:1px solid var(--rule-2);margin-top:4px;padding-top:14px;
+    font-size:12.5px;color:var(--red)}
+  .motivo b{display:block;font-size:13px;margin-bottom:3px}
+  .motivo ul{margin:6px 0 0;padding-left:16px}
+  .motivo li{margin-bottom:2px}
+  .conta{flex:1 1 100%;border-top:1px solid var(--rule-2);margin-top:4px;padding-top:12px}
+  .conta summary{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);
+    cursor:pointer;font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px}
+  .conta summary::-webkit-details-marker{display:none}
+  .conta summary::before{content:"";width:5px;height:5px;border-right:1.5px solid currentColor;
+    border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+  .conta[open] summary::before{transform:rotate(45deg)}
+  .conta summary:hover{color:var(--seal)}
+  .conta pre{font-family:var(--mono);font-size:11.5px;line-height:1.75;color:var(--ink-2);
+    margin:11px 0 0;white-space:pre-wrap;overflow-x:auto}
+  .conta pre b{color:var(--ink);font-weight:700}
+
+  /* ---------- restrições (divulgação progressiva) ---------- */
+  .restr{margin-bottom:30px}
+  .restr>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:11px;
+    padding:13px 0;border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+  .restr>summary::-webkit-details-marker{display:none}
+  .restr>summary::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--ink-3);
+    border-bottom:1.5px solid var(--ink-3);transform:rotate(45deg);transition:transform .22s;margin-left:auto}
+  .restr[open]>summary::after{transform:rotate(-135deg)}
+  .restr .sit{font-size:13.5px;font-weight:600}
+  .restr .sit.livre::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--seal);margin-right:9px;vertical-align:1px}
+  .restr .sit.travado{color:var(--red)}
+  .restr .sit.travado::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--red);margin-right:9px;vertical-align:1px}
+  .restr .subsit{font-size:12px;color:var(--ink-3)}
+  .restr>.corpo{padding:6px 0 2px}
+  .restr .lei{font-size:12px;color:var(--ink-3);margin:8px 0 12px}
+  ul.hip{list-style:none;margin:0;padding:0}
+  ul.hip li{border-left:2px solid transparent;padding:11px 0 11px 14px;margin-left:-2px;
+    transition:border-color .18s,background .18s}
+  ul.hip li:hover{background:var(--rule-2)}
+  ul.hip li.on{border-left-color:var(--red);background:var(--red-w)}
+  ul.hip label{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+  ul.hip input{width:16px;height:16px;margin:3px 0 0;flex:0 0 auto;accent-color:var(--red);cursor:pointer}
+  ul.hip .txt{font-size:13.5px;line-height:1.45}
+  ul.hip .num{font-family:var(--serif);font-weight:700;margin-right:5px}
+  ul.hip li.on .txt{color:var(--red)}
+  ul.hip em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);margin-top:3px}
+  ul.hip li.on em{color:var(--red);opacity:.8}
+
+  /* ---------- ação ---------- */
+  .acao{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1.5px solid var(--ink);
+    padding-top:18px}
+  #btnPdf{font:inherit;font-size:14px;font-weight:600;letter-spacing:.01em;cursor:pointer;
+    padding:12px 24px;border:1.5px solid var(--seal);background:var(--seal);color:var(--sheet);
+    border-radius:2px;transition:background .16s,color .16s,transform .1s}
+  #btnPdf:hover{background:transparent;color:var(--seal)}
+  #btnPdf:active{transform:translateY(1px)}
+  #btnPdf:disabled{opacity:.55;cursor:default;transform:none}
+  .acao .exp{font-size:12px;color:var(--ink-3);max-width:34ch}
+  .rodape{margin-top:38px;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+
+  @media (max-width:540px){
+    .topo h1{font-size:26px}
+    .v-num{font-size:42px}
+    .linha{flex-wrap:wrap;gap:4px}
+    .linha .campo{margin-left:auto}
+    .carimbo{position:static;transform:none;display:inline-block;margin-bottom:12px}
+    .veredito.restrito .v-dir{padding-top:0}
+  }
+
+  /* =========================================================
+     Demonstrativo impresso — cabe em uma folha A4
+     ========================================================= */
+  #relatorio{display:none}
+  @media print{
+    @page{size:A4 portrait;margin:12mm 14mm}
+    html,body{background:#fff!important;color:#000!important}
+    .folha{display:none!important}
+    #relatorio{display:block;font-family:"Segoe UI",Arial,sans-serif;color:#111;font-size:9.6pt;line-height:1.42}
+    #relatorio *{color:#111!important}
+    #relatorio .rh{border-bottom:1.6pt solid #0d4b3a;padding-bottom:6pt;margin-bottom:9pt}
+    #relatorio .rh h1{font-family:Cambria,Georgia,serif;font-size:15pt;font-weight:600;margin:0 0 2pt;
+      letter-spacing:-.3pt;color:#0d4b3a!important}
+    #relatorio .rh .meta{font-size:8.4pt;color:#555!important;letter-spacing:.2pt}
+    #relatorio h2{font-size:8.2pt;text-transform:uppercase;letter-spacing:.9pt;color:#0d4b3a!important;
+      margin:10pt 0 4pt;font-weight:700;border-bottom:.6pt solid #ccc;padding-bottom:2pt}
+    #relatorio table{width:100%;border-collapse:collapse;font-size:9.2pt}
+    #relatorio td{padding:2.6pt 0;vertical-align:top}
+    #relatorio td.v{text-align:right;font-family:Consolas,monospace;font-variant-numeric:tabular-nums;
+      white-space:nowrap;font-weight:700}
+    #relatorio td.d{color:#555!important;font-size:8.4pt}
+    #relatorio .step{margin:5pt 0 0;padding-left:9pt;border-left:1.6pt solid #cfdad5}
+    #relatorio .step .t{font-size:8.2pt;color:#555!important;text-transform:uppercase;letter-spacing:.6pt}
+    #relatorio .step .f{font-family:Consolas,monospace;font-size:9pt;margin-top:1pt}
+    #relatorio .step .r{font-weight:700}
+    #relatorio .box{border:1pt solid #0d4b3a;padding:7pt 10pt;margin-top:9pt;background:#f1f6f4;
+      display:flex;justify-content:space-between;align-items:center}
+    #relatorio .box .lb{font-size:8.2pt;text-transform:uppercase;letter-spacing:.7pt;color:#555!important}
+    #relatorio .box .bg{font-family:Cambria,Georgia,serif;font-size:17pt;font-weight:700;color:#0d4b3a!important}
+    #relatorio .box.off{border-color:#8d2c24;background:#fbf0ef}
+    #relatorio .box.off .bg{color:#8d2c24!important}
+    #relatorio .warn{border:.8pt solid #8d2c24;padding:6pt 9pt;margin-top:8pt;font-size:8.8pt;background:#fbf0ef}
+    #relatorio .warn b{color:#8d2c24!important}
+    #relatorio ul{margin:3pt 0 0;padding-left:13pt;font-size:8.8pt}
+    #relatorio li{margin-bottom:1.5pt}
+    #relatorio .sig{margin-top:20pt;display:flex;gap:26pt;font-size:8.4pt;color:#555!important;text-align:center}
+    #relatorio .sig div{flex:1;border-top:.6pt solid #666;padding-top:3pt}
+    #relatorio .rf{margin-top:12pt;border-top:.6pt solid #ccc;padding-top:4pt;font-size:7.6pt;
+      color:#666!important;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<div class="folha">
+
+  <div class="topo">
+    <button type="button" id="tema" title="Alternar entre tinta clara e escura" aria-label="Alternar tema">
+      <svg class="lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/>
+      </svg>
+      <svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.4v2.3M12 19.3v2.3M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.4 12h2.3M19.3 12h2.3M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>
+      </svg>
+    </button>
+    <p class="orgao">Secretaria Municipal de Fazenda · Administração Tributária</p>
+    <h1>Apuração da GIAR<span class="art">Art. 22</span></h1>
+    <p class="lede">Informe a arrecadação do mês e a do mesmo mês do ano anterior. O incremento real,
+      o percentual e o valor da gratificação são apurados enquanto você digita.</p>
+    <div class="filete"></div>
+  </div>
+
+  <div class="bloco">
+    <p class="rot"><span>Servidor e competência</span></p>
+    <div class="linha">
+      <div class="cap"><b>Servidor</b><i>Lotado na Secretaria de Fazenda — § 1º</i></div>
+      <div class="campo"><input type="text" class="txt" id="servidor" placeholder="nome completo"></div>
+    </div>
+    <div class="linha">
+      <div class="cap"><b>Mês de apuração</b><i>Competência a que se refere o cálculo</i></div>
+      <div class="campo"><select id="mes"></select></div>
+    </div>
+    <div class="linha">
+      <div class="cap"><b>Ano</b><i>O comparativo usa o mesmo mês do ano anterior</i></div>
+      <div class="campo"><input type="number" class="val" id="ano" value="2026" min="2000" max="2100"></div>
+    </div>
+  </div>
+
+  <div class="bloco">
+    <p class="rot"><span>Receitas ingressadas no Tesouro</span></p>
+    <p class="rot-nota">Art. 23 — impostos, taxas, contribuições, preços públicos, dívida ativa,
+      multas, juros e cota-parte do ITR.</p>
+    <div class="linha">
+      <div class="cap"><b>ARP</b><i>Arrecadação do mês apurado</i></div>
+      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="arp" inputmode="decimal" value="0,00"></div>
+    </div>
+    <div class="linha">
+      <div class="cap"><b>REMR</b><i>Remissões concedidas no mês</i></div>
+      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="remr" inputmode="decimal" value="0,00"></div>
+    </div>
+    <div class="linha">
+      <div class="cap"><b>ARPA</b><i>Arrecadação do mesmo mês do ano anterior</i></div>
+      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="arpa" inputmode="decimal" value="0,00"></div>
+    </div>
+    <div class="linha">
+      <div class="cap"><b>Índice de atualização</b><i>Adotado pelo município para atualizar os tributos</i></div>
+      <div class="campo">
+        <select id="indice">
+          <option value="00433IPCA"      data-nome="IPCA"       selected>IPCA (IBGE)</option>
+          <option value="00188INPC"      data-nome="INPC">INPC (IBGE)</option>
+          <option value="10764IPC-E"     data-nome="IPCA-E">IPCA-E (IBGE)</option>
+          <option value="28655IGP-M"     data-nome="IGP-M">IGP-M (FGV)</option>
+          <option value="00190IGP-DI"    data-nome="IGP-DI">IGP-DI (FGV)</option>
+          <option value="00191IPC-BRASIL" data-nome="IPC-BRASIL">IPC-BRASIL (FGV)</option>
+          <option value="00193IPC-SP"    data-nome="IPC-SP">IPC-SP (FIPE)</option>
+          <option value="selic"          data-nome="Selic" data-art="a">Selic (BCB)</option>
+        </select>
+      </div>
+    </div>
+    <div class="linha">
+      <div class="cap"><b>VINFLD</b><i>Índice acumulado em 12 meses até o mês apurado</i></div>
+      <div class="campo"><input type="text" class="val" id="ipca" inputmode="decimal" data-dec="6"
+        value="0,00" title="Cole aqui o trecho copiado do Banco Central"><span class="pre">%</span></div>
+    </div>
+
+    <p class="ajuda">
+      <a id="linkBc" href="#" target="_blank" rel="noopener noreferrer">
+        <svg class="calc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4.5" y="2.5" width="15" height="19" rx="2.2"/>
+          <path d="M8 6.5h8"/>
+          <path d="M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/>
+        </svg>
+        <span id="rotuloBc">Buscar o índice no Banco Central</span>
+        <svg class="seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8"/>
+        </svg>
+      </a>
+      <span id="ajudaTxt"></span>
+    </p>
+    <div class="aviso" id="aviso" hidden></div>
+  </div>
+
+  <div class="veredito vazio" id="veredito">
+    <div class="carimbo" id="carimbo" hidden>Não elegível<small id="carimboInc">parágrafo único</small></div>
+
+    <div class="v-esq">
+      <p class="v-rot">Percentual da gratificação</p>
+      <p class="v-num" id="vGiar">—</p>
+      <p class="v-diz" id="vDiz">Preencha a arrecadação do mês e a do mesmo mês do ano anterior
+        para apurar o incremento.</p>
+    </div>
+
+    <dl class="v-dir">
+      <div class="verba"><dt>Incremento real — INCR</dt><span class="fio"></span><dd id="vIncr">—</dd></div>
+      <div class="verba"><dt>Quociente INCR ÷ ARPA</dt><span class="fio"></span><dd id="vVar">—</dd></div>
+      <div class="verba forte"><dt>Valor devido</dt><span class="fio"></span><dd id="vValor">—</dd></div>
+    </dl>
+
+    <div class="motivo" id="motivo" hidden></div>
+
+    <details class="conta" id="conta" hidden>
+      <summary>Memória de cálculo</summary>
+      <pre id="memo"></pre>
+    </details>
+  </div>
+
+  <details class="restr" id="restr">
+    <summary>
+      <span>
+        <span class="sit livre" id="sit">Sem restrições assinaladas</span><br>
+        <span class="subsit" id="subsit">Cinco hipóteses de perda — parágrafo único</span>
+      </span>
+    </summary>
+    <div class="corpo">
+      <p class="lei">Marque o que tiver ocorrido com este servidor. Qualquer hipótese aplicável
+        retira a gratificação da competência apurada.</p>
+      <ul class="hip" id="lista"></ul>
+    </div>
+  </details>
+
+  <div class="acao">
+    <button type="button" id="btnPdf">Gerar cálculo</button>
+    <span class="exp">Abre o demonstrativo em uma folha A4, com a memória passo a passo,
+      pronto para salvar em PDF ou juntar ao processo.</span>
+  </div>
+
+  <p class="rodape">Cálculo instrumental. A apuração oficial depende dos dados contábeis do
+    Tesouro Municipal e do índice de atualização divulgado pelo Banco Central.</p>
+
+</div>
+
+<div id="relatorio"></div>
+
+<script>
+"use strict";
+/* ---------- tinta clara ou escura ----------
+   Sem escolha do usuário, segue o tema do sistema operacional.
+   A escolha manual vence e fica guardada no próprio navegador. */
+const raiz=document.documentElement;
+const escuroNoSistema=()=>window.matchMedia('(prefers-color-scheme: dark)').matches;
+let temaSalvo=null;
+try{ temaSalvo=localStorage.getItem('giar-tema'); }catch(e){}
+if(temaSalvo==='claro'||temaSalvo==='escuro') raiz.setAttribute('data-tema',temaSalvo);
+
+document.getElementById('tema').addEventListener('click',()=>{
+  const atual=raiz.getAttribute('data-tema') || (escuroNoSistema()?'escuro':'claro');
+  const novo=atual==='escuro'?'claro':'escuro';
+  raiz.setAttribute('data-tema',novo);
+  try{ localStorage.setItem('giar-tema',novo); }catch(e){}
+});
+
+const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const n4=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4});
+const n2=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const nPct=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:6}); // Selic
+const nFat=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:8}); // 1+VINFLD
+const money=v=>brl.format(isFinite(v)?v:0);
+
+function parseNum(s){
+  if(typeof s==='number')return s;
+  if(!s)return 0;
+  let t=String(s).trim().replace(/\s|R\$|%/g,'');
+  const neg=/^-/.test(t); t=t.replace(/-/g,'');
+  const c=t.includes(','), d=t.includes('.');
+  if(c&&d) t=t.replace(/\./g,'').replace(',','.');
+  else if(c) t=t.replace(',','.');
+  else if(d){const p=t.split('.'); if(p.length>1&&p.slice(1).every(x=>x.length===3)) t=p.join('');}
+  const v=parseFloat(t);
+  return isFinite(v)?(neg?-v:v):0;
+}
+
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+const EXCL=[
+  {id:'I',  esc:'tri', t:'Apenado com advertência, repreensão por escrito ou suspensão em processo administrativo disciplinar, no trimestre anterior.', e:'Perde nos três meses do trimestre imediatamente posterior à pena.',
+   mot:'pena disciplinar de advertência, repreensão por escrito ou suspensão aplicada no trimestre anterior'},
+  {id:'II', esc:'mes', t:'Faltou injustificadamente neste mês.', e:'Perde no mês da ausência.',
+   mot:'falta injustificada ao serviço no mês apurado'},
+  {id:'III',esc:'tri', t:'Faltou injustificadamente em plantão fiscal ou escala de serviço fora do expediente, no trimestre anterior.', e:'Perde nos três meses do trimestre imediatamente posterior à ausência.',
+   mot:'falta injustificada em plantão fiscal ou escala de serviço fora do expediente, no trimestre anterior'},
+  {id:'IV', esc:'mes', t:'Descumprimento ou morosidade no atendimento a ordens de serviço e prazos regulamentares, sem justificativa, neste mês.', e:'Perde no mês do descumprimento.',
+   mot:'descumprimento ou morosidade no atendimento a ordens de serviço e prazos regulamentares, sem justificativa'},
+  {id:'V',  esc:'mes', t:'Prática de atos ilegais, sem respeito à legislação de regência, ou atos anulados posteriormente, neste mês.', e:'Perde no mês do ato ou do reconhecimento da anulabilidade.',
+   mot:'prática de atos ilegais, sem respeito à legislação de regência, ou posteriormente anulados'}
+];
+
+document.getElementById('mes').innerHTML=MESES.map((m,i)=>
+  `<option value="${i}">${m.charAt(0).toUpperCase()+m.slice(1)}</option>`).join('');
+document.getElementById('mes').value=new Date().getMonth();
+
+document.getElementById('lista').innerHTML=EXCL.map(x=>`
+  <li id="li-${x.id}">
+    <label><input type="checkbox" id="chk-${x.id}">
+      <span class="txt"><span class="num">${x.id}</span>${x.t}<em>${x.e}</em></span></label>
+  </li>`).join('');
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function listaIncisos(ids){
+  return ids.length>1
+    ? 'incisos '+ids.slice(0,-1).join(', ')+' e '+ids[ids.length-1]
+    : 'inciso '+ids[0];
+}
+
+let ULTIMO=null, giarAnterior='';
+
+function calc(){
+  const ARP=parseNum(arp.value), REMR=parseNum(remr.value), ARPA=parseNum(arpa.value);
+  const VINFLD=parseNum(ipca.value)/100;
+
+  /* --- fórmulas do art. 22, § 3º (intocadas) --- */
+  const receita=ARP+REMR;
+  const corrigida=ARPA*(1+VINFLD);
+  const INCR=receita-corrigida;                  // I
+  const razao=ARPA!==0?INCR/ARPA:NaN;
+  const GIARpct=ARPA!==0?1+razao:NaN;            // II — lido em %
+  const devida=INCR>0;
+  const valor=devida&&isFinite(GIARpct)?INCR*GIARpct/100:0;
+
+  const mes=+document.getElementById('mes').value, ano=+document.getElementById('ano').value;
+  const nome=document.getElementById('servidor').value.trim();
+  const refMes=MESES[mes]+'/'+ano;
+  const vazio=ARP===0&&ARPA===0&&REMR===0;
+
+  /* --- restrições --- */
+  const motivos=[];
+  EXCL.forEach(x=>{
+    const on=document.getElementById('chk-'+x.id).checked;
+    document.getElementById('li-'+x.id).classList.toggle('on',on);
+    if(on) motivos.push({id:x.id,mot:x.mot,esc:x.esc});
+  });
+  const excluido=motivos.length>0;
+  const aPagar=excluido?0:valor;
+
+  /* --- veredito --- */
+  const vd=document.getElementById('veredito');
+  vd.className='veredito'+(vazio?' vazio':(devida&&!excluido?'':' nao'))+(excluido?' restrito':'');
+
+  const pct=devida&&isFinite(GIARpct)?n2.format(GIARpct)+'%':'—';
+  const alvo=document.getElementById('vGiar');
+  alvo.textContent=vazio?'—':pct;
+  if(alvo.textContent!==giarAnterior&&!vazio){
+    alvo.classList.remove('pisca'); void alvo.offsetWidth; alvo.classList.add('pisca');
+  }
+  giarAnterior=alvo.textContent;
+
+  document.getElementById('vIncr').textContent =vazio?'—':money(INCR);
+  document.getElementById('vVar').textContent  =vazio||!isFinite(razao)?'—':n4.format(razao);
+  document.getElementById('vValor').textContent=vazio?'—':money(aPagar);
+
+  const diz=document.getElementById('vDiz');
+  if(vazio){
+    diz.innerHTML='Preencha a arrecadação do mês e a do mesmo mês do ano anterior para apurar o incremento.';
+  } else if(!isFinite(GIARpct)){
+    diz.innerHTML='Sem a arrecadação do ano anterior não há comparação possível — o § 3º apura o incremento '+
+      'confrontando os dois períodos.';
+  } else if(!devida){
+    diz.innerHTML='Não houve incremento em '+esc(refMes)+': a arrecadação anterior corrigida (<b>'+
+      money(corrigida)+'</b>) superou a receita do mês (<b>'+money(receita)+'</b>). A gratificação não é devida.';
+  } else if(excluido){
+    diz.innerHTML='O município teve incremento real de <b>'+money(INCR)+'</b> em '+esc(refMes)+
+      ', mas este servidor não faz jus à gratificação.';
+  } else {
+    diz.innerHTML='Incremento real de <b>'+money(INCR)+'</b> em '+esc(refMes)+
+      '. A gratificação é devida'+(nome?' a '+esc(nome):'')+'.';
+  }
+
+  /* --- carimbo e motivos --- */
+  const car=document.getElementById('carimbo'), mtv=document.getElementById('motivo');
+  car.hidden=!excluido;
+  mtv.hidden=!excluido;
+  if(excluido){
+    document.getElementById('carimboInc').textContent=listaIncisos(motivos.map(m=>m.id));
+    mtv.innerHTML='<b>'+(nome?esc(nome)+' não é elegível':'Servidor não elegível')+' ao GIAR de '+esc(refMes)+'.</b>'+
+      'A gratificação apurada de '+money(valor)+' não é devida a este servidor nesta competência.'+
+      '<ul>'+motivos.map(m=>'<li><b>Inciso '+m.id+'</b> — '+esc(m.mot)+'.</li>').join('')+'</ul>';
+  }
+
+  /* --- memória --- */
+  const conta=document.getElementById('conta');
+  conta.hidden=vazio;
+  document.getElementById('memo').innerHTML=
+`INCR  = (ARP + REMR) − (ARPA × (1 + VINFLD))
+      = (${money(ARP)} + ${money(REMR)}) − (${money(ARPA)} × ${nFat.format(1+VINFLD)})
+      = ${money(receita)} − ${money(corrigida)}
+      = <b>${money(INCR)}</b>
+
+%GIAR = 1 + (INCR / ARPA)
+      = 1 + ${isFinite(razao)?n4.format(razao):'—'}
+      = <b>${isFinite(GIARpct)?n2.format(GIARpct)+'%':'ARPA zerada — não calculável'}</b>
+
+Valor = INCR × %GIAR
+      = ${money(INCR)} × ${isFinite(GIARpct)?n4.format(GIARpct)+'%':'—'}
+      = <b>${money(valor)}</b>`;
+
+  /* --- atalho para a Calculadora do Cidadão, com o período já resolvido ---
+     O BCB aceita a correção por GET e devolve o resultado pronto. Corrigindo
+     R$ 100,00, o "valor percentual correspondente" é o próprio VINFLD.
+     Índices de preços e Selic são abas distintas, com formatos de data distintos. */
+  const dd=n=>String(n).padStart(2,'0');
+  const selIdx=document.getElementById('indice');
+  const escolha=selIdx.options[selIdx.selectedIndex];
+  const indice={cod:escolha.value, nome:escolha.dataset.nome, art:escolha.dataset.art||'o'};
+  /* fragmento de texto: o Chrome rola até o resultado e o pinta na tela */
+  const destaque='#:~:text='+encodeURIComponent('Valor percentual correspondente')+',%25';
+  const base='https://www3.bcb.gov.br/CALCIDADAO/publico/';
+  let urlBc, periodo;
+
+  if(indice.cod==='selic'){
+    /* aba 4 — intervalo entre datas, DD/MM/AAAA */
+    const ini='01/'+dd(mes+1)+'/'+(ano-1), fim='01/'+dd(mes+1)+'/'+ano;
+    periodo=ini+' a '+fim;
+    urlBc=base+'corrigirPelaSelic.do?method=corrigirPelaSelic&aba=4'+
+      '&dataInicial='+encodeURIComponent(ini)+
+      '&dataFinal='+encodeURIComponent(fim)+
+      '&valorCorrecao='+encodeURIComponent('100,00')+destaque;
+  } else {
+    /* aba 1 — índices de preços, MM/AAAA, incluindo a taxa do mês inicial:
+       12 competências fechadas terminando no mês apurado */
+    const mIni=(mes+1)%12, aIni=mes===11?ano:ano-1;
+    const ini=dd(mIni+1)+'/'+aIni, fim=dd(mes+1)+'/'+ano;
+    periodo=ini+' a '+fim;
+    urlBc=base+'corrigirPorIndice.do?method=corrigirPorIndice&aba=1'+
+      '&selIndice='+encodeURIComponent(indice.cod)+
+      '&dataInicial='+encodeURIComponent(ini)+
+      '&dataFinal='+encodeURIComponent(fim)+
+      '&valorCorrecao='+encodeURIComponent('100,00')+destaque;
+  }
+
+  document.getElementById('linkBc').href=urlBc;
+  document.getElementById('rotuloBc').textContent='Buscar '+indice.art+' '+indice.nome+' no Banco Central';
+  document.getElementById('ajudaTxt').textContent=
+    'Abre '+indice.art+' '+indice.nome+' acumulad'+indice.art+' de '+periodo+
+    ' já calculad'+indice.art+', com o resultado destacado na página. '+
+    'Copie o trecho e cole aqui — o campo entende a linha inteira.';
+
+  /* --- avisos de preenchimento, em linguagem de gente --- */
+  const av=document.getElementById('aviso');
+  let texto='';
+  if(ARPA===0&&(ARP>0||REMR>0))
+    texto='Falta a arrecadação de '+MESES[mes]+'/'+(ano-1)+'. É esse valor que serve de base comparativa no § 3º.';
+  else if(!vazio&&VINFLD===0)
+    texto=indice.nome+' em 0,00% — a comparação está sendo feita sem deduzir correção monetária. Busque o acumulado do período no Banco Central.';
+  else if(VINFLD<0)
+    texto='Índice negativo: deflação de '+nPct.format(Math.abs(VINFLD*100))+'% no período. A base comparativa foi reduzida.';
+  av.hidden=!texto; av.textContent=texto;
+
+  /* --- resumo das restrições --- */
+  const sit=document.getElementById('sit'), sub=document.getElementById('subsit');
+  if(excluido){
+    sit.className='sit travado';
+    sit.textContent=(motivos.length===1?'1 restrição assinalada':motivos.length+' restrições assinaladas');
+    sub.textContent='Parágrafo único, '+listaIncisos(motivos.map(m=>m.id))+' — sem direito em '+refMes+'.';
+  } else {
+    sit.className='sit livre';
+    sit.textContent='Sem restrições assinaladas';
+    sub.textContent='Cinco hipóteses de perda — parágrafo único';
+  }
+
+  ULTIMO={ARP,REMR,ARPA,VINFLD,receita,corrigida,INCR,razao,GIARpct,devida,valor,
+          nome,mes,ano,refMes,motivos,excluido,aPagar,indice:indice.nome,periodoIndice:periodo};
+}
+
+/* ---------- demonstrativo impresso ---------- */
+function montaRelatorio(u){
+  const hoje=new Date();
+  const dt=hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const pct=isFinite(u.GIARpct)?n2.format(u.GIARpct)+'%':'não calculável';
+  const pctEx=isFinite(u.GIARpct)?n4.format(u.GIARpct)+'%':'não calculável';
+  const nome=u.nome||'(servidor não identificado)';
+
+  const linhas=[
+    ['ARP','Arrecadação do mês apurado',money(u.ARP)],
+    ['REMR','Remissões de receita concedidas no mês',money(u.REMR)],
+    ['ARPA','Arrecadação do mesmo mês do ano anterior',money(u.ARPA)],
+    ['VINFLD','Atualização monetária — '+esc(u.indice)+' acumulado de '+esc(u.periodoIndice),nPct.format(u.VINFLD*100)+'%']
+  ].map(l=>`<tr><td><b>${l[0]}</b> <span class="d">— ${l[1]}</span></td><td class="v">${l[2]}</td></tr>`).join('');
+
+  const excl=u.motivos.length
+    ? `<div class="warn"><b>Servidor não elegível ao GIAR de ${esc(u.refMes)}.</b>
+        Parágrafo único, ${listaIncisos(u.motivos.map(m=>m.id))} —
+        gratificação apurada de ${money(u.valor)} não devida a este servidor no mês.
+        <ul>${u.motivos.map(m=>`<li><b>Inciso ${m.id}</b> — ${esc(m.mot)}.</li>`).join('')}</ul></div>`
+    : `<p style="font-size:8.8pt;margin:4pt 0 0;color:#555">Nenhuma hipótese do parágrafo único foi assinalada — o servidor faz jus à gratificação no mês apurado.</p>`;
+
+  document.getElementById('relatorio').innerHTML=`
+  <div class="rh">
+    <h1>Demonstrativo de Cálculo — GIAR</h1>
+    <div class="meta">Gratificação de Incremento de Arrecadação de Receitas — arts. 22 e 23 · Apuração mensal</div>
+  </div>
+
+  <table>
+    <tr><td class="d" style="width:32%">Servidor</td><td style="font-weight:700">${esc(nome)}</td></tr>
+    <tr><td class="d">Mês de apuração</td><td style="font-weight:600">${esc(u.refMes)}</td></tr>
+    <tr><td class="d">Período comparado</td><td>${esc(MESES[u.mes])}/${u.ano-1}</td></tr>
+    <tr><td class="d">Emitido em</td><td>${dt}</td></tr>
+  </table>
+
+  <h2>1. Dados informados</h2>
+  <table>${linhas}</table>
+
+  <h2>2. Memória de cálculo</h2>
+
+  <div class="step">
+    <div class="t">Passo 1 — Receita do período (art. 22, § 3º)</div>
+    <div class="f">ARP + REMR = ${money(u.ARP)} + ${money(u.REMR)} = <span class="r">${money(u.receita)}</span></div>
+  </div>
+
+  <div class="step">
+    <div class="t">Passo 2 — Base comparativa corrigida (dedução da correção monetária)</div>
+    <div class="f">ARPA × (1 + VINFLD) = ${money(u.ARPA)} × ${nFat.format(1+u.VINFLD)} = <span class="r">${money(u.corrigida)}</span></div>
+  </div>
+
+  <div class="step">
+    <div class="t">Passo 3 — Incremento real de receita (§ 3º, I)</div>
+    <div class="f">INCR = (ARP + REMR) − (ARPA × (1 + VINFLD))</div>
+    <div class="f">INCR = ${money(u.receita)} − ${money(u.corrigida)} = <span class="r">${money(u.INCR)}</span></div>
+    <div class="f" style="font-size:8.4pt;color:#555">${u.devida
+      ? 'Resultado maior que zero — há incremento real de receita.'
+      : 'Resultado menor ou igual a zero — não há incremento real; GIAR indevida no mês.'}</div>
+  </div>
+
+  <div class="step">
+    <div class="t">Passo 4 — Percentual da gratificação (§ 3º, II)</div>
+    <div class="f">%GIAR = 1 + (INCR / ARPA)</div>
+    <div class="f">%GIAR = 1 + (${money(u.INCR)} / ${money(u.ARPA)}) = 1 + ${isFinite(u.razao)?n4.format(u.razao):'—'} = <span class="r">${pctEx}</span></div>
+  </div>
+
+  <div class="step">
+    <div class="t">Passo 5 — Valor da gratificação</div>
+    <div class="f">Valor = INCR × %GIAR = ${money(u.INCR)} × ${pctEx} = <span class="r">${money(u.valor)}</span></div>
+  </div>
+
+  <div class="box${u.excluido||!u.devida?' off':''}">
+    <div><div class="lb">Percentual apurado — %GIAR</div><div class="bg">${u.devida?pct:'—'}</div></div>
+    <div style="text-align:right"><div class="lb">Valor devido ao servidor</div><div class="bg">${money(u.aPagar)}</div></div>
+  </div>
+
+  <h2>3. Hipóteses de exclusão — parágrafo único</h2>
+  ${excl}
+
+  <div class="sig">
+    <div>Servidor responsável pela apuração</div>
+    <div>Secretaria Municipal de Fazenda</div>
+  </div>
+
+  <div class="rf">Documento gerado pela Calculadora GIAR em ${dt}. Cálculo instrumental — a apuração oficial depende dos dados contábeis do Tesouro Municipal e do índice oficial publicado.</div>`;
+}
+
+function nomeArquivo(u){
+  const d=new Date();
+  const p=n=>String(n).padStart(2,'0');
+  const data=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  const nome=(u.nome||'servidor')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'servidor';
+  return nome+'-'+data;
+}
+
+const btn=document.getElementById('btnPdf');
+btn.addEventListener('click',()=>{
+  calc();
+  if(ULTIMO.ARP===0&&ULTIMO.ARPA===0){
+    const av=document.getElementById('aviso');
+    av.hidden=false;
+    av.textContent='Nada a demonstrar ainda: informe ao menos a arrecadação do mês e a do ano anterior.';
+    document.getElementById('arp').focus();
+    return;
+  }
+  const rotulo=btn.textContent;
+  btn.textContent='Montando demonstrativo…'; btn.disabled=true;
+  montaRelatorio(ULTIMO);
+  const titulo=document.title;
+  document.title=nomeArquivo(ULTIMO);
+  window.print();
+  setTimeout(()=>{document.title=titulo;btn.textContent=rotulo;btn.disabled=false;},700);
+});
+
+/* máscara: agrupa o milhar enquanto digita, preservando o cursor.
+   data-dec define quantas casas o campo aceita (2 em dinheiro, 6 na Selic). */
+const nInt=new Intl.NumberFormat('pt-BR');
+const casasDe=el=>+(el.dataset.dec||2);
+function formatador(el){
+  const d=casasDe(el);
+  return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:d});
+}
+/* o campo cresce com o número: nada de cifra cortada no fim */
+function ajustarLargura(el){
+  if(!el.classList.contains('val')) return;
+  el.style.width=(Math.max(7,el.value.length)+0.7)+'ch';
+}
+
+function mascarar(el){
+  const antes=el.value, pos=el.selectionStart;
+  const relevantes=(antes.slice(0,pos).match(/[\d,-]/g)||[]).length;
+
+  let t=antes.replace(/[^\d,-]/g,'');
+  const neg=t.startsWith('-'); t=t.replace(/-/g,'');
+  const p=t.split(',');
+  let ipt=p.shift().replace(/^0+(?=\d)/,'');
+  let dec=p.length?p.join('').slice(0,casasDe(el)):null;
+  let saida=(ipt?nInt.format(+ipt):(dec!==null?'0':''))+(dec!==null?','+dec:'');
+  if(neg&&saida) saida='-'+saida;
+  if(saida===antes){ ajustarLargura(el); return; }   /* texto igual, largura pode ter mudado */
+
+  el.value=saida;
+  ajustarLargura(el);
+  let c=0,i=0;
+  for(;i<saida.length&&c<relevantes;i++) if(/[\d,-]/.test(saida[i])) c++;
+  el.setSelectionRange(i,i);
+}
+
+/* colar do Banco Central: aceita a linha inteira e pesca o número colado ao "%" */
+document.getElementById('ipca').addEventListener('paste',e=>{
+  const bruto=(e.clipboardData||window.clipboardData).getData('text');
+  if(!bruto) return;
+  const comPct=bruto.match(/(-?[\d.]*\d(?:,\d+)?)\s*%/);
+  const qualquer=bruto.match(/(-?[\d.]*\d(?:,\d+)?)/);
+  const achado=(comPct||qualquer);
+  if(!achado) return;
+  e.preventDefault();
+  const el=e.target;
+  el.value=achado[1];
+  mascarar(el);
+  el.setSelectionRange(el.value.length,el.value.length);
+  calc();
+});
+
+document.addEventListener('input',e=>{
+  if(e.target.tagName==='INPUT'&&e.target.inputMode==='decimal') mascarar(e.target);
+  calc();
+});
+document.addEventListener('change',calc);
+document.addEventListener('focusout',e=>{
+  if(e.target.tagName==='INPUT'&&e.target.inputMode==='decimal'){
+    e.target.value=formatador(e.target).format(parseNum(e.target.value));
+    ajustarLargura(e.target);
+    calc();
+  }
+});
+
+document.querySelectorAll('input.val').forEach(ajustarLargura);
+calc();
+</script>
+</body>
+</html>
