@@ -319,15 +319,15 @@
     <p class="rot"><span>Servidor e competência</span></p>
     <div class="linha">
       <div class="cap"><b>Servidor</b><i>Lotado na Secretaria de Fazenda — § 1º</i></div>
-      <div class="campo"><input type="text" class="txt" id="servidor" placeholder="nome completo"></div>
+      <div class="campo"><input type="text" class="txt" id="servidor" aria-label="Servidor" placeholder="nome completo"></div>
     </div>
     <div class="linha">
       <div class="cap"><b>Mês de apuração</b><i>Competência a que se refere o cálculo</i></div>
-      <div class="campo"><select id="mes"></select></div>
+      <div class="campo"><select id="mes" aria-label="Mês de apuração"></select></div>
     </div>
     <div class="linha">
       <div class="cap"><b>Ano</b><i>O comparativo usa o mesmo mês do ano anterior</i></div>
-      <div class="campo"><input type="number" class="val" id="ano" value="2026" min="2000" max="2100"></div>
+      <div class="campo"><input type="number" class="val" id="ano" aria-label="Ano" value="2026" min="2000" max="2100"></div>
     </div>
   </div>
 
@@ -337,20 +337,20 @@
       multas, juros e cota-parte do ITR.</p>
     <div class="linha">
       <div class="cap"><b>ARP</b><i>Arrecadação do mês apurado</i></div>
-      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="arp" inputmode="decimal" value="0,00"></div>
+      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="arp" aria-label="ARP" inputmode="decimal" value="0,00"></div>
     </div>
     <div class="linha">
       <div class="cap"><b>REMR</b><i>Remissões concedidas no mês</i></div>
-      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="remr" inputmode="decimal" value="0,00"></div>
+      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="remr" aria-label="REMR" inputmode="decimal" value="0,00"></div>
     </div>
     <div class="linha">
       <div class="cap"><b>ARPA</b><i>Arrecadação do mesmo mês do ano anterior</i></div>
-      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="arpa" inputmode="decimal" value="0,00"></div>
+      <div class="campo"><span class="pre">R$</span><input type="text" class="val" id="arpa" aria-label="ARPA" inputmode="decimal" value="0,00"></div>
     </div>
     <div class="linha">
       <div class="cap"><b>Índice de atualização</b><i>Adotado pelo município para atualizar os tributos</i></div>
       <div class="campo">
-        <select id="indice">
+        <select id="indice" aria-label="Índice de atualização">
           <option value="00433IPCA"      data-nome="IPCA"       selected>IPCA (IBGE)</option>
           <option value="00188INPC"      data-nome="INPC">INPC (IBGE)</option>
           <option value="10764IPC-E"     data-nome="IPCA-E">IPCA-E (IBGE)</option>
@@ -364,7 +364,7 @@
     </div>
     <div class="linha">
       <div class="cap"><b>VINFLD</b><i>Índice acumulado em 12 meses até o mês apurado</i></div>
-      <div class="campo"><input type="text" class="val" id="ipca" inputmode="decimal" data-dec="6"
+      <div class="campo"><input type="text" class="val" id="ipca" aria-label="VINFLD" inputmode="decimal" data-dec="6"
         value="0,00" title="Cole aqui o trecho copiado do Banco Central"><span class="pre">%</span></div>
     </div>
 
